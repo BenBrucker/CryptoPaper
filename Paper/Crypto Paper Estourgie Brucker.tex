@@ -138,6 +138,8 @@ need = 4 + packet_length - block_size
 \end{verbatim}
 Knowing this 32-bit value, the first 32 bits of $p^*_i$ can be recovered using equation (1).
 The overall success probability is $2^{-18}$ with the recommended AES-CBC and $2^{-17}$ with the required 3des-CBC.
+\subsection{Countermeassures}
+One of the countermeasures openSSH took was to return the same message when the length check or the block check failed. This means that you can't apply the first attack to reveal the first 14 bits. However this doesn't prevent the 32-bit recovery attack. An extra improvement is to randomize the length field if the length check fails. The system then proceeds with the new length until the MAC check fails. This will causes a problem for our attacker since it now doesn't know if the length is accepted and the MAC tag just failed or the length isn't accepted and it just returns the MAC error.
 
 \bibliography{Master}
 
