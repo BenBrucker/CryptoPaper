@@ -151,7 +151,7 @@ The length field of $p^{'}_1$ can be regarded as a random 32-bit value, therefor
 
 \indent The overall success probability of the second stage is $2^{-18}$ with the recommended AES-CBC and $2^{-17}$ with the required 3des-CBC.
 
-\indent By carefully selecting the point at which the ciphertext is injected, the probability for success can be increased to $2^{-14}+2^{-4}$. This is possible by observing $2^14$ connections and storing whether $c^*_{i-1} \xor IV$ has been used, in a size $2^{14}$ table. This way he knows if a length check would succeed when he would insert $c_i^*$ into a connection. The attacker has to observe at most $2^{18}$ IV's until a suitable IV is found. The only difficulty then is the block-size check. This adds the $2^{4}$ possibilities.
+\indent By carefully selecting the point at which the ciphertext is injected, the probability for success can be increased to need at most $2^{14}+2^{4}$ coonections. This is possible by observing $2^14$ connections and storing whether $c^*_{i-1} \xor IV$ has been used, in a size $2^{14}$ table. This way he knows if a length check would succeed when he would insert $c_i^*$ into a connection. The attacker has to observe at most $2^{18}$ IV's until a suitable IV is found. The only difficulty then is the block-size check. This adds the $2^{4}$ possibilities.
 
 \begin{figure*}
 	  \centering
