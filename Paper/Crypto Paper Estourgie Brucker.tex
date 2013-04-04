@@ -138,7 +138,7 @@ if (buffer_len(&input) < need + maclen)
 	return SSH_MSG_NONE;
 \end{verbatim}
 
-\indent The attacker continues his attack by injecting blocks of size \emph{maclen}. He will keep feeding the server blocks until the test fails, a the MAC check will be triggered and ultimately a MAC error is returned. This happens after at most $2^{18}/L$ blocks. We then know the value of \emph{need}, the exact value of the length field in $p_1^{'}$.
+\indent The attacker continues his attack by injecting blocks of size \emph{maclen}. He will keep feeding the server blocks until the test fails, and the MAC check will be triggered and ultimately a MAC error is returned. This happens after at most $2^{18}/L$ blocks. We then know the value of \emph{need}, the exact value of the length field in $p_1^{'}$.
 \begin{verbatim}
 need = 4 + packet_length - block_size
 \end{verbatim}
