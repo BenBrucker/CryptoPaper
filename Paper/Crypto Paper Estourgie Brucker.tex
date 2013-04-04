@@ -138,7 +138,7 @@ After receiving $c_i^*$, there are two options. Either a termination of the TCP 
 
 %An unfortunate feature from this attack is that the adversary needs to send $2^{27}$ ciphertext blocks on average before the MAC check is triggered. But the attack would succeed with a probability of 1 and can be done with any of the encrypted ssh packets.
 \subsection*{Complications of the attack}
-Open SSH checks if the packet length field is at most $2^{18}$ and then checks if it has a certain divisibility property. The connection is torn down if either check fails. The effect of the length checking will reduce the success of the attack to about $2^{-18}$. However the effect is that it reduces the maximum number the attacker has to inject to only $2^{14}$.
+OpenSSH checks if the packet length field is at most $2^{18}$ and then checks if it has a certain divisibility property. The connection is torn down if either check fails. The effect of the length checking will reduce the success of the attack to about $2^{-18}$. However the effect is that it reduces the maximum number the attacker has to inject to only $2^{14}$.
 
 
 \subsection*{Recovering 32 plaintext bits}
@@ -154,8 +154,21 @@ need = 4 + packet_length - block_size
 Knowing this 32-bit value, the first 32 bits of $p^*_i$ can be recovered using equation (1).
 The overall success probability is $2^{-18}$ with the recommended AES-CBC and $2^{-17}$ with the required 3des-CBC.
 
-\subsection*{Countermeassures}
-One of the countermeasures openSSH took was to return the same message when the length check or the block check failed. This means that you can't apply the first attack to reveal the first 14 bits. However this doesn't prevent the 32-bit recovery attack. An extra improvement is to randomize the length field if the length check fails. The system then proceeds with the new length until the MAC check fails. This will causes a problem for our attacker since it now doesn't know if the length is accepted and the MAC tag just failed or the length isn't accepted and it just returns the MAC error.
+\subsection*{Alternatives}
+\indent Bellare et al.~\cite{Bellare2004} propose a few alternatives to the BPP protocol. SSH-NPC, SSH-\$NPC, SSH-CTR, SSH-CTRIVCBC and SSH-EIV-CBC.
+\indent SSH-NPC and SSH-\$NPC (No Packet Chaining) use CBC mode with random per packet IV's~\cite{Albrecht2009}. Albrecht et al show that using these alternatives won't matter as long as the attacker can still distinguish between a packet-length check failure and a MAC failure. The attacker can just inject a random IV block, instead of using the last packet's last ciphertext block.
+
+\indent Furthermore, control over the IV gives an attacker more advantages. For example, he can distinguish whether a message $M_1$ or message $M_2$ was encrypted.
+
+% Insert small security game here
+
+\indent Albrecht et al. show that SSH-CTR, SSH-CTRIVCBC and SSH-EIV-CBC are resistant to their attack. SSH-CTR because it uses a counter mode. SSH-CTRIVCBC and SSH-EIV-CBC because the attacker is unable to see the IV since it is either the encryption of a counter or encipherment of the last ciphertext block.
+
+\indent OpenSSH 5.2 switched to AES counter mode, but currently no SSH implementations use either SSH-CTRIVCBC or SSH-EIV-CBC.
+
+\subsection*{Countermeasures}
+\indent One of the countermeasures OpenSSH took was to return the same error message when either the length check or the block-length check failed. By not having this distinction, an attacker can't apply the first attack to reveal the first 14 bits. However this doesn't prevent the 32-bit recovery attack. An extra improvement is to randomize the length field if the length check fails. The system then proceeds with the new length until the MAC check fails. This will causes a problem for our attacker since it now doesn't know if the length is accepted and the MAC tag just failed or the length isn't accepted and it just returns the MAC error.
+
 
 \bibliography{Master}
 
