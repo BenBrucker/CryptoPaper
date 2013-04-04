@@ -140,6 +140,12 @@ After receiving $c_i^*$, there are two options. Either a termination of the TCP 
 \subsection*{Complications of the attack}
 OpenSSH checks if the packet length field is at most $2^{18}$ and then checks if it has a certain divisibility property. The connection is torn down if either check fails. The effect of the length checking will reduce the success of the attack to about $2^{-18}$. However the effect is that it reduces the maximum number the attacker has to inject to only $2^{14}$.
 
+\begin{figure*}
+	  \centering
+    	\includegraphics[scale=.7]{drawing.png}
+	\caption{Attack on the SSH BPP protocol~\cite{Albrecht2009}}
+	\label{fig:BPPAttack}
+\end{figure*}
 
 \subsection*{Recovering 32 plaintext bits}
 We now continue where we left at the second attack, the attacker retrieved 14 plaintext bits and now knows that the server is in a wait state. When L = 16 (e.g. with aes), this implies that the first 14 bits of the length field in $p^{'}_1$ will all be zero, and that the last 4 bits of this field encode the value 12. So we now have 18 bits we can use to calculate parts of $p^*_i$ using equation (1)(with 3des L = 8 and the last 3 bits of the length field should encode the value 4 which gives us 17 bits in total). When both test pass we no know that the server is waiting for more data until the following condition is no longer satisfied.
