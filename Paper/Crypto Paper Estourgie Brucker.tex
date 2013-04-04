@@ -122,21 +122,36 @@
 $c_i = F_k(c_{i-1} \oplus p_i), i = 1,2,...,n$
 where $c_0$, the Initializing Vector (IV), is the last block of the previous ciphertext. Decryption works as follows: $p_i = c_{i-1} \oplus F^{-1}_k(c_i), i = 1,2,...,n$
 
-\subsection*{The attack}
+\subsection*{Recovering 14 plaintext bits}
 
-The attacker collects a target ciphertext block $c_i^*$ from an established SSH connection. Let $c_{i-1}^*$ denote the preceding target block and $p_i^*$ denote the target plaintext of $c_i^*$.
+\indent The attacker collects a target ciphertext block $c_i^*$ from an established SSH connection. Let $c_{i-1}^*$ denote the preceding target block and $p_i^*$ denote the target plaintext of $c_i^*$.
 $p_i^* = c_{i-1}^* \oplus F^{-1}_k(c_i^*)$
 The attacker now injects $c_i^*$ as the first block of a new packet in the SSH connection. Let $c_n$ denote the last ciphertext block of the preceding packet on the connection. This block is used as the IV for the new packet, so it will receive $p^{'}_1$ after decryption because: $p^{'}_1 = c_n \oplus F^{-1}_k(c_i^*)$
 
-%%% Checked till here
-
 \indent By combining these equations, we get: $p_i^* = c_{i-1}^* \oplus p^{'}_1 \oplus c_n$ (1)
-After receiving $c_i^*$, there are two options. Either a termination of the TCP connection over which the connection is running and sending a \textit{SSH2 MSG DISCONNECTED} error, or the SSH connection enters a state in which it is waiting for more data. When it enters this waiting state, we know that $p^{'}_1$ has passed the length check. This only occurs if the packet length field in $p^{'}_1$ lies between 5 and $2^{18}$, which only occurs if the first 14 bits of $p^{'}_1$ are zero, we can use this and the equation in (1) to calculate the first 14 bits of $p_i^*$. $p^{'}_1$ is a random 32-bit value, therefore the length check will pass with probability $2^{-14} - 5/2^{18} \approx 2^{-14}$. Which is a low chance but will give us the first 14 bits of $p^*_i$, and still is a way better chance then guessing.
+After receiving $c_i^*$, there are two options. Either a termination of the TCP connection over which the connection is running and sending a \textit{SSH2 MSG DISCONNECTED} error, or the SSH connection enters a state in which it is waiting for more data. When it enters this waiting state, we know that $p^{'}_1$ has passed the length check. This only occurs if the packet length field in $p^{'}_1$ lies between 5 and $2^{18}$, which only occurs if the first 14 bits of $p^{'}_1$ are zero, we can use this and the equation in (1) to calculate the first 14 bits of $p_i^*$. 
 
+\subsection*{Recovering 32 plaintext bits}
+\indent We now continue with the next stage of the attack. The attacker retrieved 14 plaintext bits, and as shown earlier, when L = 16 (e.g. with aes), the last 4 bits of this field encode the value 12. So we now have 18 bits we can use to calculate parts of $p^*_i$ using equation defined in the formal notation(or 17 with with 3des L = 8). When both these test pass we now know that the server is waiting for more data until the following condition is no longer satisfied.
+\begin{verbatim}
+if (buffer_len(&input) < need + maclen)
+	return SSH_MSG_NONE;
+\end{verbatim}
 
-%An unfortunate feature from this attack is that the adversary needs to send $2^{27}$ ciphertext blocks on average before the MAC check is triggered. But the attack would succeed with a probability of 1 and can be done with any of the encrypted ssh packets.
-\subsection*{Complications of the attack}
-OpenSSH checks if the packet length field is at most $2^{18}$ and then checks if it has a certain divisibility property. The connection is torn down if either check fails. The effect of the length checking will reduce the success of the attack to about $2^{-18}$. However the effect is that it reduces the maximum number the attacker has to inject to only $2^{14}$.
+\indent The attacker continues his attack by injecting blocks of size \emph{maclen}. He will keep feeding the server blocks until the test fails, a the MAC check will be triggered and ultimately a MAC error is returned. This happens after at most $2^{18}/L$ blocks. We then know the value of \emph{need}, the exact value of the length field in $p_1^{'}$.
+\begin{verbatim}
+need = 4 + packet_length - block_size
+\end{verbatim}
+\indent Knowing this 32-bit value, the first 32 bits of $p^*_i$ can be recovered using equation defined in the formal notation.
+
+\subsection*{Probabilities}
+
+\indent The succes probability of the first stage is the probability that the length check passes.
+The length field of $p^{'}_1$ can be regarded as a random 32-bit value, therefore the length check will pass with probability $2^{-14} - 5/2^{18} \approx 2^{-14}$. This is a low chance, but the success is verifiable.
+
+\indent The overall success probability of the second stage is $2^{-18}$ with the recommended AES-CBC and $2^{-17}$ with the required 3des-CBC.
+
+\indent By carefully selecting the point at which the ciphertext is injected, the probability for success can be increased to $2^{-14}+2^{-4}$. This is possible by observing $2^14$ connections and storing whether $c^*_{i-1} \xor IV$ has been used, in a size $2^{14}$ table. This way he knows if a length check would succeed when he would insert $c_i^*$ into a connection. The attacker has to observe at most $2^{18}$ IV's until a suitable IV is found. The only difficulty then is the block-size check. This adds the $2^{4}$ possibilities.
 
 \begin{figure*}
 	  \centering
@@ -145,18 +160,7 @@ OpenSSH checks if the packet length field is at most $2^{18}$ and then checks if
 	\label{fig:BPPAttack}
 \end{figure*}
 
-\subsection*{Recovering 32 plaintext bits}
-We now continue where we left at the second attack, the attacker retrieved 14 plaintext bits and now knows that the server is in a wait state. When L = 16 (e.g. with aes), this implies that the first 14 bits of the length field in $p^{'}_1$ will all be zero, and that the last 4 bits of this field encode the value 12. So we now have 18 bits we can use to calculate parts of $p^*_i$ using equation (1)(with 3des L = 8 and the last 3 bits of the length field should encode the value 4 which gives us 17 bits in total). When both test pass we no know that the server is waiting for more data until the following condition is no longer satisfied.
-\begin{verbatim}
-if (buffer_len(&input) < need + maclen)
-	return SSH_MSG_NONE;
-\end{verbatim}
-Once the test fails, the MAC check will be triggered. The attacker continues his attack by injecting packets of size \emph{maclen}. The attacker will keep feeding the server packets until it receives a MAC error which is after at most $2^{18}/L$ packets. When this occurs we know the value of \emph{need}, the exact value of $p_1^{'}$.
-\begin{verbatim}
-need = 4 + packet_length - block_size
-\end{verbatim}
-Knowing this 32-bit value, the first 32 bits of $p^*_i$ can be recovered using equation (1).
-The overall success probability is $2^{-18}$ with the recommended AES-CBC and $2^{-17}$ with the required 3des-CBC.
+
 
 \section{Alternatives}
 \indent Bellare et al.~\cite{Bellare2004} propose a few alternatives to the BPP protocol. SSH-NPC, SSH-\$NPC, SSH-CTR, SSH-CTRIVCBC and SSH-EIV-CBC.
