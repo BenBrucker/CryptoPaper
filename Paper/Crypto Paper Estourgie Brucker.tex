@@ -130,8 +130,6 @@ The attacker now injects $c_i^*$ as the first block of a new packet in the SSH c
 
 %%% Checked till here
 
-
-
 \indent By combining these equations, we get: $p_i^* = c_{i-1}^* \oplus p^{'}_1 \oplus c_n$ (1)
 After receiving $c_i^*$, there are two options. Either a termination of the TCP connection over which the connection is running and sending a \textit{SSH2 MSG DISCONNECTED} error, or the SSH connection enters a state in which it is waiting for more data. When it enters this waiting state, we know that $p^{'}_1$ has passed the length check. This only occurs if the packet length field in $p^{'}_1$ lies between 5 and $2^{18}$, which only occurs if the first 14 bits of $p^{'}_1$ are zero, we can use this and the equation in (1) to calculate the first 14 bits of $p_i^*$. $p^{'}_1$ is a random 32-bit value, therefore the length check will pass with probability $2^{-14} - 5/2^{18} \approx 2^{-14}$. Which is a low chance but will give us the first 14 bits of $p^*_i$, and still is a way better chance then guessing.
 
@@ -142,7 +140,7 @@ OpenSSH checks if the packet length field is at most $2^{18}$ and then checks if
 
 \begin{figure*}
 	  \centering
-    	\includegraphics[scale=.7]{drawing.png}
+    	\includegraphics[scale=1]{drawing.pdf}
 	\caption{Attack on the SSH BPP protocol~\cite{Albrecht2009}}
 	\label{fig:BPPAttack}
 \end{figure*}
