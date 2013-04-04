@@ -79,7 +79,10 @@ Ben Br\"ucker}
   
 \subsection{Open SSH implementation of SSH BPP}
     \begin{frame}
-  \frametitle{What is the SSH-BPP protocol?}
+  \frametitle{Open SSH implementation of SSH BPP}
+\begin{center}
+  \includegraphics[scale=.2]{openssh.pdf}
+\end{center}
     \begin{itemize}
       \item Open SSH first performs a length check. If the length given in the length field is not between 5 and $2^{18}$ it sends a \textit{SSH2 MSG DISCONNECTED} error back to the sender.
       \item Next OpenSSH checks that the total number of bytes expected is indeed a multiple of the block size. When this check fails, the TCP connection will terminate without an error message.
